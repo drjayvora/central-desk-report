@@ -1,0 +1,46 @@
+name: Scheduler
+
+# Keeps one long-running job alive during working hours that triggers the
+# "Refresh report" workflow every 15 minutes (09:00-18:00 IST, Mon-Sat).
+# GitHub's own cron is often late or skipped, so it is only used here to
+# start (or restart) this loop; extra starts just queue and exit.
+on:
+  schedule:
+    - cron: "3 3-11 * * 1-6"   # 08:33 to 16:33 IST, hourly
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+concurrency:
+  group: scheduler
+  cancel-in-progress: false
+
+jobs:
+  loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - name: Trigger the refresh every 15 minutes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          started=$(date +%s)
+          while true; do
+            dow=$(TZ=Asia/Kolkata date +%u)
+            mins=$((10#$(TZ=Asia/Kolkata date +%H) * 60 + 10#$(TZ=Asia/Kolkata date +%M)))
+            if [ "$dow" = 7 ] || [ "$mins" -gt $((18 * 60 + 5)) ]; then
+              echo "Outside working hours, stopping."; exit 0
+            fi
+            if [ "$mins" -ge $((9 * 60)) ]; then
+              gh workflow run refresh.yml --repo "$GITHUB_REPOSITORY" --ref main
+              echo "Refresh triggered at $(TZ=Asia/Kolkata date +%H:%M) IST"
+            fi
+            wait=$((900 - $(date +%s) % 900 + 5))
+            if [ $(( $(date +%s) - started + wait )) -gt $((340 * 60)) ]; then
+              echo "Near the 6-hour job limit, handing over to a new run."
+              gh workflow run scheduler.yml --repo "$GITHUB_REPOSITORY" --ref main
+              exit 0
+            fi
+            sleep "$wait"
+          done
