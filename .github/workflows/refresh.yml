@@ -1,0 +1,38 @@
+name: Refresh report
+
+on:
+  schedule:
+    # Every hour 09:00-18:00 IST (03:30-12:30 UTC), Monday to Saturday
+    - cron: "30 3-12 * * 1-6"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build report from CRM
+        run: python3 build/report.py
+        env:
+          FRAPPE_TOKEN: ${{ secrets.FRAPPE_TOKEN }}
+          CENTRAL_REPS: ${{ secrets.CENTRAL_REPS }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

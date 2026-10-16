@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Central Desk Day View</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column, report header, KPI strip, counsellor table, then charts in a two-up grid. */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --fg: #15191e; --muted: #5b6470; --line: #e1e4e8; --grid: #eceef1;
+  --accent: #1d4f7a; --bad: #c43c3b; --pop: #ffffff; --shadow: 0 6px 24px rgba(20, 30, 45, .12);
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #6250d6; --mutedbar: #c7ccd3;
+  --display: "Fraunces", Georgia, "Times New Roman", serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111418; --panel: #191d22; --fg: #eef0f3; --muted: #a3abb6; --line: #2b3139; --grid: #232830;
+    --accent: #8db8e0; --bad: #ec7372; --pop: #20252c; --shadow: 0 6px 24px rgba(0, 0, 0, .45);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #9085e9; --mutedbar: #4a525d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111418; --panel: #191d22; --fg: #eef0f3; --muted: #a3abb6; --line: #2b3139; --grid: #232830;
+  --accent: #8db8e0; --bad: #ec7372; --pop: #20252c; --shadow: 0 6px 24px rgba(0, 0, 0, .45);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #9085e9; --mutedbar: #4a525d; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 32px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+header { display: grid; gap: 6px; }
+.nav { display: flex; gap: 6px; flex-wrap: wrap; }
+.nav a { font-size: 13px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); text-decoration: none; background: var(--panel); }
+.nav a[aria-current="page"] { background: var(--accent); color: var(--panel); border-color: var(--accent); font-weight: 600; }
+.nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(28px, 4.5vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+.take { margin: 4px 0 0; color: var(--muted); max-width: 72ch; }
+.take b { color: var(--fg); font-weight: 600; }
+h2 { font-size: 17px; font-weight: 600; margin: 0; }
+h3 { font-size: 15px; font-weight: 600; margin: 0; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.tiles { display: grid; gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 760px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 2px; align-content: start; }
+.tile .lbl { font-size: 13px; color: var(--muted); }
+.tile .big { font-family: var(--display); font-size: 32px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.tile .sub { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sec { display: grid; gap: 12px; }
+.wrap > *, .sec > *, .grid2 > * { min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.grid2 { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { font: inherit; font-size: 13px; padding: 6px 12px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--panel); font-weight: 600; }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex: none; }
+.chart { position: relative; min-height: 250px; }
+.chart.short { min-height: 150px; }
+.tip { position: absolute; pointer-events: none; background: var(--pop); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 6px 10px; font-size: 12.5px; white-space: nowrap; z-index: 2; }
+.tip .t { color: var(--muted); margin-bottom: 2px; }
+.tip .r { display: flex; gap: 6px; align-items: center; font-variant-numeric: tabular-nums; }
+.tip .r b { margin-left: auto; padding-left: 14px; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { padding: 9px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 12.5px; color: var(--muted); font-weight: 500; vertical-align: bottom; white-space: normal; min-width: 76px; }
+th:first-child, td:first-child { text-align: left; }
+td:first-child .sw { margin-right: 8px; vertical-align: -1px; }
+tr.team td { font-weight: 600; border-bottom: 0; border-top: 2px solid var(--line); }
+th.hl, td.hl { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 16px; }
+svg text { font-family: var(--body); }
+</style>
+<style>
+.picker { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.picker input[type=date] { font: inherit; font-size: 15px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--fg); }
+.picker button { font: inherit; font-size: 13px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--fg); cursor: pointer; }
+.picker button:disabled { opacity: .4; cursor: default; }
+.picker button:focus-visible, .picker input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.daylabel { font-family: var(--display); font-size: 22px; }
+.empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="nav" aria-label="Report pages"><a href="./">Overview</a><a href="day.html" aria-current="page">Day view</a></nav>
+  <header>
+    <span class="eyebrow">GEMS Education · Central admissions desk</span>
+    <h1>Central Desk Day View</h1>
+    <p class="take">Pick a date to see the central desk's calling and visits for that day.</p>
+  </header>
+
+  <div class="picker">
+    <button type="button" id="prev" aria-label="Previous day">‹ Previous</button>
+    <label for="date" class="note">Date</label>
+    <input type="date" id="date">
+    <button type="button" id="next" aria-label="Next day">Next ›</button>
+    <button type="button" id="today">Latest</button>
+    <span class="daylabel" id="daylabel"></span>
+  </div>
+
+  <section class="tiles" id="tiles" aria-label="Team totals for the day"></section>
+
+  <section class="sec">
+    <h2>By counsellor</h2>
+    <div class="card">
+      <p class="note">A connect is a completed call with talk time above 0 seconds. Visits scheduled are bookings made that day; visits done are visits that took place that day.</p>
+      <div class="tablewrap"><table id="reps"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>Call outcomes</h2>
+    <div class="card">
+      <p class="note">Outcome logged on each dial that day. "Not logged" means the counsellor left it blank.</p>
+      <div class="tablewrap"><table id="oc"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <footer>
+    <span id="foot"></span>
+    <span>Source: GEMS Frappe CRM call logs, visits and assignments. Updates every hour, 9 am to 6 pm, Monday to Saturday.</span>
+  </footer>
+</div>
+
+<script>
+const DATA = __DATA__;
+(() => {
+  const REPS = ['Arya', 'Minakshi', 'Ritu'];
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const COL = () => ({ Arya: css('--s1'), Minakshi: css('--s2'), Ritu: css('--s3'), Team: css('--s4') });
+  const fInt = (n) => Number(n).toLocaleString('en-IN');
+  const fPct = (n) => `${Math.round(n * 100)}%`;
+  const fDur = (m) => { const v = Math.round(m); return v >= 60 ? `${Math.floor(v / 60)}h ${String(v % 60).padStart(2, '0')}m` : `${v} min`; };
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const days = [...new Set(DATA.daily.map((r) => r.date))].sort();
+  const input = document.getElementById('date');
+  input.min = days[0]; input.max = days[days.length - 1];
+  document.getElementById('foot').textContent = `Snapshot taken ${DATA.meta.taken}.`;
+
+  const sum = (rows, k) => rows.reduce((a, r) => a + Number(r[k] || 0), 0);
+  function rowFor(rows) {
+    const d = sum(rows, 'dials'), c = sum(rows, 'connects');
+    return { leads_assigned: sum(rows, 'leads_assigned'), dials: d, unique_dials: sum(rows, 'unique_dials'), connects: c,
+      rate: d ? c / d : 0, talk: sum(rows, 'talk_minutes'), vb: sum(rows, 'visits_booked'), vd: sum(rows, 'visits_done') };
+  }
+  const COLS = [
+    ['Counsellor', null], ['Dials', (r) => fInt(r.dials)], ['Unique leads dialled', (r) => fInt(r.unique_dials)],
+    ['Connects', (r) => fInt(r.connects)], ['Connect rate', (r) => (r.dials ? fPct(r.rate) : '–')], ['Talk time', (r) => fDur(r.talk)],
+    ['Visits scheduled', (r) => fInt(r.vb)], ['Visits done', (r) => fInt(r.vd)], ['Leads assigned', (r) => fInt(r.leads_assigned)],
+  ];
+  const thr = el('tr'); COLS.forEach(([h]) => thr.appendChild(el('th', null, h)));
+  document.querySelector('#reps thead').appendChild(thr);
+
+  function show(d) {
+    if (!days.includes(d)) d = days[days.length - 1];
+    input.value = d;
+    try { history.replaceState(null, '', '#' + d); } catch (e) {}
+    const i = days.indexOf(d);
+    document.getElementById('prev').disabled = i <= 0;
+    document.getElementById('next').disabled = i >= days.length - 1;
+    const dt = new Date(d + 'T00:00:00Z');
+    document.getElementById('daylabel').textContent = dt.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }) + (d === DATA.meta.today ? ' (so far)' : '');
+    const rows = DATA.daily.filter((r) => r.date === d);
+    const team = rowFor(rows);
+    const tw = document.getElementById('tiles'); tw.replaceChildren();
+    [['Dials', fInt(team.dials), `${fInt(team.unique_dials)} unique leads`],
+     ['Connects', fInt(team.connects), team.dials ? `Connect rate ${fPct(team.rate)}` : 'No dials'],
+     ['Talk time', fDur(team.talk), `${fInt(Math.round(team.talk))} minutes`],
+     ['Visits scheduled', fInt(team.vb), `${fInt(team.vd)} visits done`]].forEach(([l, b, s]) => {
+      const t = el('div', 'tile'); t.append(el('span', 'lbl', l), el('span', 'big', b), el('span', 'sub', s)); tw.appendChild(t);
+    });
+    const c = COL(), tb = document.querySelector('#reps tbody'); tb.replaceChildren();
+    [...REPS.map((n) => [n, rowFor(rows.filter((r) => r.counsellor === n))]), ['Team', team]].forEach(([n, r]) => {
+      const tr = el('tr', n === 'Team' ? 'team' : null);
+      COLS.forEach(([, f], j) => {
+        const td = el('td');
+        if (!j) { const s = el('span', 'sw'); s.style.background = c[n]; td.append(s, n); } else td.append(f(r));
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    // outcomes: outcome rows x counsellor columns
+    const oc = DATA.daily_outcomes.filter((r) => r.date === d);
+    const outs = [...new Set(oc.map((r) => r.outcome))].sort((a, b) => sum(oc.filter((r) => r.outcome === b), 'calls') - sum(oc.filter((r) => r.outcome === a), 'calls'));
+    const th = document.querySelector('#oc thead'), ob = document.querySelector('#oc tbody'); th.replaceChildren(); ob.replaceChildren();
+    if (!outs.length) { const tr = el('tr'); const td = el('td', 'empty', 'No dials logged on this day.'); td.colSpan = 5; tr.appendChild(td); ob.appendChild(tr); return; }
+    const h = el('tr'); ['Outcome', ...REPS, 'Team'].forEach((x) => h.appendChild(el('th', null, x))); th.appendChild(h);
+    outs.forEach((o) => {
+      const tr = el('tr'); tr.appendChild(el('td', null, o));
+      REPS.forEach((n) => tr.appendChild(el('td', null, fInt(sum(oc.filter((r) => r.outcome === o && r.counsellor === n), 'calls')))));
+      tr.appendChild(el('td', null, fInt(sum(oc.filter((r) => r.outcome === o), 'calls')))); ob.appendChild(tr);
+    });
+  }
+  input.addEventListener('change', () => show(input.value));
+  document.getElementById('prev').addEventListener('click', () => show(days[Math.max(0, days.indexOf(input.value) - 1)]));
+  document.getElementById('next').addEventListener('click', () => show(days[Math.min(days.length - 1, days.indexOf(input.value) + 1)]));
+  document.getElementById('today').addEventListener('click', () => show(days[days.length - 1]));
+  const h = location.hash.slice(1);
+  show(/^\d{4}-\d{2}-\d{2}$/.test(h) ? h : days[days.length - 1]);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => show(input.value));
+})();
+</script>
+</body>
+</html>
