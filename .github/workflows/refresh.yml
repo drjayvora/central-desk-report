@@ -2,8 +2,10 @@ name: Refresh report
 
 on:
   schedule:
-    # Every hour 09:00-18:00 IST (03:30-12:30 UTC), Monday to Saturday
-    - cron: "30 3-12 * * 1-6"
+    # Every 15 minutes 09:00-18:00 IST (03:30-12:30 UTC), Monday to Saturday
+    - cron: "30,45 3 * * 1-6"
+    - cron: "*/15 4-11 * * 1-6"
+    - cron: "0,15,30 12 * * 1-6"
   workflow_dispatch:
   push:
     branches: [main]
