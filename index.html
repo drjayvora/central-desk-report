@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Central Desk Calling Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column, report header, KPI strip, counsellor table, then charts in a two-up grid. */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --fg: #15191e; --muted: #5b6470; --line: #e1e4e8; --grid: #eceef1;
+  --accent: #1d4f7a; --bad: #c43c3b; --pop: #ffffff; --shadow: 0 6px 24px rgba(20, 30, 45, .12);
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #6250d6; --mutedbar: #c7ccd3;
+  --display: "Fraunces", Georgia, "Times New Roman", serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111418; --panel: #191d22; --fg: #eef0f3; --muted: #a3abb6; --line: #2b3139; --grid: #232830;
+    --accent: #8db8e0; --bad: #ec7372; --pop: #20252c; --shadow: 0 6px 24px rgba(0, 0, 0, .45);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #9085e9; --mutedbar: #4a525d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111418; --panel: #191d22; --fg: #eef0f3; --muted: #a3abb6; --line: #2b3139; --grid: #232830;
+  --accent: #8db8e0; --bad: #ec7372; --pop: #20252c; --shadow: 0 6px 24px rgba(0, 0, 0, .45);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #9085e9; --mutedbar: #4a525d; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 32px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(28px, 4.5vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+.take { margin: 4px 0 0; color: var(--muted); max-width: 72ch; }
+.take b { color: var(--fg); font-weight: 600; }
+h2 { font-size: 17px; font-weight: 600; margin: 0; }
+h3 { font-size: 15px; font-weight: 600; margin: 0; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 2px; align-content: start; }
+.tile .lbl { font-size: 13px; color: var(--muted); }
+.tile .big { font-family: var(--display); font-size: 32px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.tile .sub { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sec { display: grid; gap: 12px; }
+.wrap > *, .sec > *, .grid2 > * { min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.grid2 { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { font: inherit; font-size: 13px; padding: 6px 12px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--panel); font-weight: 600; }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex: none; }
+.chart { position: relative; min-height: 250px; }
+.chart.short { min-height: 150px; }
+.tip { position: absolute; pointer-events: none; background: var(--pop); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 6px 10px; font-size: 12.5px; white-space: nowrap; z-index: 2; }
+.tip .t { color: var(--muted); margin-bottom: 2px; }
+.tip .r { display: flex; gap: 6px; align-items: center; font-variant-numeric: tabular-nums; }
+.tip .r b { margin-left: auto; padding-left: 14px; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { padding: 9px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 12.5px; color: var(--muted); font-weight: 500; vertical-align: bottom; white-space: normal; min-width: 76px; }
+th:first-child, td:first-child { text-align: left; }
+td:first-child .sw { margin-right: 8px; vertical-align: -1px; }
+tr.team td { font-weight: 600; border-bottom: 0; border-top: 2px solid var(--line); }
+th.hl, td.hl { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.fun { display: grid; gap: 8px; }
+.fun .row { display: grid; grid-template-columns: minmax(110px, 170px) 1fr; gap: 10px; align-items: center; }
+.fun .name { font-size: 13px; color: var(--muted); }
+.fun .track { position: relative; height: 28px; }
+.fun .fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; min-width: 2px; }
+.fun .val { position: absolute; top: 50%; transform: translateY(-50%); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fun .val em { font-style: normal; color: var(--muted); }
+.fun .val em.bad { color: var(--bad); }
+footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 16px; }
+svg text { font-family: var(--body); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">GEMS Education · Central admissions desk</span>
+    <h1>Central Desk Calling Report</h1>
+    <p class="take" id="take"></p>
+  </header>
+
+  <section class="tiles" id="tiles" aria-label="Team totals"></section>
+
+  <section class="sec">
+    <h2>By counsellor</h2>
+    <div class="card">
+      <p class="note">Averages are per calling day (a day with at least one dial), up to the last full day. A connect is a completed call with talk time above 0 seconds.</p>
+      <div class="tablewrap"><table id="reps"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>Day by day</h2>
+    <div class="card">
+      <div class="bar">
+        <div class="seg" id="metric-seg" role="group" aria-label="Measure">
+          <button type="button" data-v="dials" aria-pressed="true">Dials</button>
+          <button type="button" data-v="talk_minutes" aria-pressed="false">Talk time</button>
+          <button type="button" data-v="connects" aria-pressed="false">Connects</button>
+          <button type="button" data-v="leads_assigned" aria-pressed="false">Leads assigned</button>
+        </div>
+        <div class="legend" id="daily-legend"></div>
+      </div>
+      <div class="chart" id="daily-chart"></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="bar">
+      <h2>Lead funnel and call outcomes</h2>
+      <div class="seg" id="rep-seg" role="group" aria-label="Counsellor"></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>Lead funnel</h3>
+        <p class="note">Leads owned now, by how far they have got. The percentage is the share kept from the step before; the biggest drop is in red.</p>
+        <div class="fun" id="funnel"></div>
+      </div>
+      <div class="card">
+        <h3>Call outcomes</h3>
+        <p class="note">Outcome logged on each dial. "Not logged" means the counsellor left it blank.</p>
+        <div class="chart short" id="outcomes"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span id="foot"></span>
+    <span>Source: GEMS Frappe CRM call logs, leads and assignments. Outgoing calls only; incoming calls carry no counsellor in the CRM.</span>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+const DATA = {"reps":[{"counsellor":"Arya","leads_owned":169,"leads_assigned_ever":176,"leads_called":95,"untouched":65,"dials":151,"unique_leads_dialled":98,"connects":61,"connect_rate":0.404,"incoming_calls":0,"talk_minutes":120.6,"calling_days":5,"avg_daily_talk_minutes":24.1,"avg_daily_dials":30.2,"today_dials":0,"today_talk_minutes":0.0},{"counsellor":"Minakshi","leads_owned":160,"leads_assigned_ever":194,"leads_called":119,"untouched":23,"dials":330,"unique_leads_dialled":150,"connects":106,"connect_rate":0.321,"incoming_calls":0,"talk_minutes":266.6,"calling_days":5,"avg_daily_talk_minutes":53.3,"avg_daily_dials":65.8,"today_dials":1,"today_talk_minutes":0.0},{"counsellor":"Ritu","leads_owned":123,"leads_assigned_ever":178,"leads_called":91,"untouched":16,"dials":235,"unique_leads_dialled":131,"connects":93,"connect_rate":0.396,"incoming_calls":0,"talk_minutes":174.2,"calling_days":6,"avg_daily_talk_minutes":27.5,"avg_daily_dials":37.0,"today_dials":13,"today_talk_minutes":9.2},{"counsellor":"Team","leads_owned":452,"leads_assigned_ever":539,"leads_called":305,"untouched":104,"dials":716,"unique_leads_dialled":372,"connects":260,"connect_rate":0.363,"incoming_calls":0,"talk_minutes":561.4,"calling_days":7,"avg_daily_talk_minutes":78.9,"avg_daily_dials":100.3,"today_dials":14,"today_talk_minutes":9.2}],"daily":[{"date":"2026-10-08","counsellor":"Arya","leads_assigned":26,"dials":0,"connects":0,"talk_minutes":0.0,"leads_dialled":0,"incoming_calls":0},{"date":"2026-10-08","counsellor":"Minakshi","leads_assigned":32,"dials":0,"connects":0,"talk_minutes":0.0,"leads_dialled":0,"incoming_calls":0},{"date":"2026-10-08","counsellor":"Ritu","leads_assigned":28,"dials":1,"connects":0,"talk_minutes":0.0,"leads_dialled":3,"incoming_calls":0},{"date":"2026-10-09","counsellor":"Arya","leads_assigned":23,"dials":31,"connects":16,"talk_minutes":28.2,"leads_dialled":30,"incoming_calls":0},{"date":"2026-10-09","counsellor":"Minakshi","leads_assigned":17,"dials":26,"connects":11,"talk_minutes":13.7,"leads_dialled":25,"incoming_calls":0},{"date":"2026-10-09","counsellor":"Ritu","leads_assigned":5,"dials":9,"connects":7,"talk_minutes":4.7,"leads_dialled":8,"incoming_calls":0},{"date":"2026-10-10","counsellor":"Arya","leads_assigned":2,"dials":12,"connects":6,"talk_minutes":9.9,"leads_dialled":12,"incoming_calls":0},{"date":"2026-10-10","counsellor":"Minakshi","leads_assigned":0,"dials":0,"connects":0,"talk_minutes":0,"leads_dialled":0,"incoming_calls":0},{"date":"2026-10-10","counsellor":"Ritu","leads_assigned":0,"dials":0,"connects":0,"talk_minutes":0,"leads_dialled":0,"incoming_calls":0},{"date":"2026-10-11","counsellor":"Arya","leads_assigned":35,"dials":0,"connects":0,"talk_minutes":0.0,"leads_dialled":0,"incoming_calls":0},{"date":"2026-10-11","counsellor":"Minakshi","leads_assigned":34,"dials":0,"connects":0,"talk_minutes":0.0,"leads_dialled":0,"incoming_calls":0},{"date":"2026-10-11","counsellor":"Ritu","leads_assigned":35,"dials":0,"connects":0,"talk_minutes":0.0,"leads_dialled":0,"incoming_calls":0},{"date":"2026-10-12","counsellor":"Arya","leads_assigned":15,"dials":27,"connects":15,"talk_minutes":36.5,"leads_dialled":29,"incoming_calls":0},{"date":"2026-10-12","counsellor":"Minakshi","leads_assigned":16,"dials":79,"connects":28,"talk_minutes":48.5,"leads_dialled":50,"incoming_calls":0},{"date":"2026-10-12","counsellor":"Ritu","leads_assigned":14,"dials":51,"connects":21,"talk_minutes":30.7,"leads_dialled":51,"incoming_calls":0},{"date":"2026-10-13","counsellor":"Arya","leads_assigned":43,"dials":23,"connects":7,"talk_minutes":6.7,"leads_dialled":18,"incoming_calls":0},{"date":"2026-10-13","counsellor":"Minakshi","leads_assigned":42,"dials":40,"connects":12,"talk_minutes":22.7,"leads_dialled":28,"incoming_calls":0},{"date":"2026-10-13","counsellor":"Ritu","leads_assigned":42,"dials":46,"connects":27,"talk_minutes":54.0,"leads_dialled":36,"incoming_calls":0},{"date":"2026-10-14","counsellor":"Arya","leads_assigned":16,"dials":0,"connects":0,"talk_minutes":0.0,"leads_dialled":0,"incoming_calls":0},{"date":"2026-10-14","counsellor":"Minakshi","leads_assigned":17,"dials":109,"connects":35,"talk_minutes":103.4,"leads_dialled":51,"incoming_calls":0},{"date":"2026-10-14","counsellor":"Ritu","leads_assigned":15,"dials":85,"connects":25,"talk_minutes":55.5,"leads_dialled":44,"incoming_calls":0},{"date":"2026-10-15","counsellor":"Arya","leads_assigned":16,"dials":58,"connects":17,"talk_minutes":39.3,"leads_dialled":25,"incoming_calls":0},{"date":"2026-10-15","counsellor":"Minakshi","leads_assigned":31,"dials":75,"connects":20,"talk_minutes":78.3,"leads_dialled":33,"incoming_calls":0},{"date":"2026-10-15","counsellor":"Ritu","leads_assigned":35,"dials":30,"connects":9,"talk_minutes":20.1,"leads_dialled":14,"incoming_calls":0},{"date":"2026-10-16","counsellor":"Arya","leads_assigned":1,"dials":0,"connects":0,"talk_minutes":0.0,"leads_dialled":0,"incoming_calls":0},{"date":"2026-10-16","counsellor":"Minakshi","leads_assigned":2,"dials":1,"connects":0,"talk_minutes":0.0,"leads_dialled":1,"incoming_calls":0},{"date":"2026-10-16","counsellor":"Ritu","leads_assigned":1,"dials":13,"connects":4,"talk_minutes":9.2,"leads_dialled":7,"incoming_calls":0}],"funnel":[{"counsellor":"Arya","step":1,"stage":"Leads owned","leads":169},{"counsellor":"Arya","step":2,"stage":"Called","leads":95},{"counsellor":"Arya","step":3,"stage":"Connected","leads":62},{"counsellor":"Arya","step":4,"stage":"Contacted or further","leads":47},{"counsellor":"Arya","step":5,"stage":"Visit scheduled or done","leads":9},{"counsellor":"Arya","step":6,"stage":"Visit done","leads":5},{"counsellor":"Minakshi","step":1,"stage":"Leads owned","leads":160},{"counsellor":"Minakshi","step":2,"stage":"Called","leads":119},{"counsellor":"Minakshi","step":3,"stage":"Connected","leads":68},{"counsellor":"Minakshi","step":4,"stage":"Contacted or further","leads":63},{"counsellor":"Minakshi","step":5,"stage":"Visit scheduled or done","leads":13},{"counsellor":"Minakshi","step":6,"stage":"Visit done","leads":5},{"counsellor":"Ritu","step":1,"stage":"Leads owned","leads":123},{"counsellor":"Ritu","step":2,"stage":"Called","leads":91},{"counsellor":"Ritu","step":3,"stage":"Connected","leads":49},{"counsellor":"Ritu","step":4,"stage":"Contacted or further","leads":46},{"counsellor":"Ritu","step":5,"stage":"Visit scheduled or done","leads":9},{"counsellor":"Ritu","step":6,"stage":"Visit done","leads":8},{"counsellor":"Team","step":1,"stage":"Leads owned","leads":452},{"counsellor":"Team","step":2,"stage":"Called","leads":305},{"counsellor":"Team","step":3,"stage":"Connected","leads":179},{"counsellor":"Team","step":4,"stage":"Contacted or further","leads":156},{"counsellor":"Team","step":5,"stage":"Visit scheduled or done","leads":31},{"counsellor":"Team","step":6,"stage":"Visit done","leads":18}],"outcomes":[{"counsellor":"Arya","outcome":"Did not pick up","calls":71},{"counsellor":"Arya","outcome":"Not logged","calls":64},{"counsellor":"Arya","outcome":"Call back later","calls":9},{"counsellor":"Arya","outcome":"Spoke to parent","calls":6},{"counsellor":"Arya","outcome":"Wrong number","calls":1},{"counsellor":"Minakshi","outcome":"Did not pick up","calls":180},{"counsellor":"Minakshi","outcome":"Not logged","calls":108},{"counsellor":"Minakshi","outcome":"Spoke to parent","calls":28},{"counsellor":"Minakshi","outcome":"Call back later","calls":9},{"counsellor":"Minakshi","outcome":"Asked for follow-up","calls":5},{"counsellor":"Ritu","outcome":"Did not pick up","calls":102},{"counsellor":"Ritu","outcome":"Not logged","calls":99},{"counsellor":"Ritu","outcome":"Spoke to parent","calls":22},{"counsellor":"Ritu","outcome":"Asked for follow-up","calls":7},{"counsellor":"Ritu","outcome":"Call back later","calls":5},{"counsellor":"Team","outcome":"Did not pick up","calls":353},{"counsellor":"Team","outcome":"Not logged","calls":271},{"counsellor":"Team","outcome":"Spoke to parent","calls":56},{"counsellor":"Team","outcome":"Call back later","calls":23},{"counsellor":"Team","outcome":"Asked for follow-up","calls":12},{"counsellor":"Team","outcome":"Wrong number","calls":1}],"meta":{"start":"2026-10-08","end":"2026-10-16","partial":true,"taken":"16 Oct 2026, 10:07 AM IST"}};
+(() => {
+  const REPS = ['Arya', 'Minakshi', 'Ritu'];
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const COL = () => ({ Arya: css('--s1'), Minakshi: css('--s2'), Ritu: css('--s3'), Team: css('--s4') });
+  const fInt = d3.format(',');
+  const f1 = d3.format(',.1f');
+  const fPct = d3.format('.0%');
+  const fDur = (m) => { const v = Math.round(m); return v >= 60 ? `${Math.floor(v / 60)}h ${String(v % 60).padStart(2, '0')}m` : `${v} min`; };
+  const parse = d3.utcParse('%Y-%m-%d');
+  const longDate = d3.utcFormat('%-d %b %Y');
+  const reps = DATA.reps, team = reps.find((r) => r.counsellor === 'Team');
+  const state = { metric: 'dials', rep: 'Team' };
+
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+  // Header
+  const take = document.getElementById('take');
+  take.append(`Arya, Minakshi and Ritu · ${longDate(parse(DATA.meta.start))} to ${longDate(parse(DATA.meta.end))}${DATA.meta.partial ? ' (last day is a part day)' : ''} · `);
+  [[fInt(team.dials), ' dials, '], [fDur(team.talk_minutes), ' of talk time and '], [fInt(team.connects), ' connects.']].forEach(([b, t]) => { take.append(el('b', null, b), t); });
+  document.getElementById('foot').textContent = `Snapshot taken ${DATA.meta.taken}.`;
+
+  // Tiles
+  const tiles = [
+    ['Dials', fInt(team.dials), `${fInt(team.unique_leads_dialled)} unique leads`],
+    ['Avg dials per day', f1(team.avg_daily_dials), 'Whole team, per calling day'],
+    ['Talk time', fDur(team.talk_minutes), `${fInt(Math.round(team.talk_minutes))} minutes`],
+    ['Avg talk time per day', fDur(team.avg_daily_talk_minutes), 'Whole team, per calling day'],
+    ['Connects', fInt(team.connects), `Connect rate ${fPct(team.connect_rate)}`],
+    ['Leads called', fInt(team.leads_called), `Of ${fInt(team.leads_owned)} leads owned`],
+  ];
+  const tw = document.getElementById('tiles');
+  tiles.forEach(([l, b, s]) => { const t = el('div', 'tile'); t.append(el('span', 'lbl', l), el('span', 'big', b), el('span', 'sub', s)); tw.appendChild(t); });
+
+  // Table
+  const COLS = [
+    ['counsellor', 'Counsellor', (r) => r.counsellor],
+    ['leads_assigned_ever', 'Leads assigned', (r) => fInt(r.leads_assigned_ever)],
+    ['leads_called', 'Leads called', (r) => fInt(r.leads_called)],
+    ['dials', 'Dials', (r) => fInt(r.dials), true],
+    ['avg_daily_dials', 'Avg dials per day', (r) => f1(r.avg_daily_dials), true],
+    ['connects', 'Connects', (r) => fInt(r.connects)],
+    ['connect_rate', 'Connect rate', (r) => fPct(r.connect_rate)],
+    ['talk_minutes', 'Talk time', (r) => fDur(r.talk_minutes), true],
+    ['avg_daily_talk_minutes', 'Avg talk time per day', (r) => fDur(r.avg_daily_talk_minutes), true],
+    ['calling_days', 'Calling days', (r) => fInt(r.calling_days)],
+  ];
+  const thr = el('tr');
+  COLS.forEach(([, h, , hl]) => thr.appendChild(el('th', hl ? 'hl' : null, h)));
+  document.querySelector('#reps thead').appendChild(thr);
+  const tb = document.querySelector('#reps tbody');
+  function drawTable() {
+    tb.replaceChildren();
+    const c = COL();
+    [...REPS, 'Team'].forEach((name) => {
+      const r = reps.find((q) => q.counsellor === name);
+      const tr = el('tr', name === 'Team' ? 'team' : null);
+      COLS.forEach(([k, , f, hl], i) => {
+        const td = el('td', hl ? 'hl' : null);
+        if (i === 0) { const s = el('span', 'sw'); s.style.background = c[name]; td.append(s); }
+        td.append(f(r)); tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+  }
+
+  // Shared bits
+  function legend(box, items) { box.replaceChildren(); items.forEach(([c, n]) => { const s = el('span'); const w = el('i', 'sw'); w.style.background = c; s.append(w, n); box.appendChild(s); }); }
+  function tipFor(box) { let t = box.querySelector('.tip'); if (!t) { t = el('div', 'tip'); t.hidden = true; box.appendChild(t); } return t; }
+  function showTip(box, tip, ev, title, rows) {
+    tip.replaceChildren(el('div', 't', title));
+    rows.forEach(([c, n, v]) => { const r = el('div', 'r'); if (c) { const s = el('span', 'sw'); s.style.background = c; r.append(s); } r.append(el('span', null, n), el('b', null, v)); tip.appendChild(r); });
+    tip.hidden = false;
+    const [x, y] = d3.pointer(ev, box);
+    let left = x + 14; if (left + tip.offsetWidth > box.clientWidth) left = Math.max(0, x - tip.offsetWidth - 14);
+    tip.style.left = left + 'px'; tip.style.top = Math.max(0, y - tip.offsetHeight - 10) + 'px';
+  }
+  const tidy = (g) => { g.attr('font-size', null).attr('font-family', null); g.select('.domain').remove(); g.selectAll('.tick line').remove(); g.selectAll('text').attr('fill', css('--muted')).style('font-size', '12px'); };
+
+  // Daily chart
+  const metricFmt = { dials: fInt, connects: fInt, leads_assigned: fInt, talk_minutes: fDur };
+  function drawDaily() {
+    const box = document.getElementById('daily-chart');
+    box.querySelectorAll('svg').forEach((s) => s.remove());
+    const c = COL(); legend(document.getElementById('daily-legend'), REPS.map((r) => [c[r], r]));
+    const m = state.metric, rows = DATA.daily;
+    const days = [...new Set(rows.map((r) => r.date))].sort();
+    const W = Math.max(300, box.clientWidth), H = 260;
+    const y = d3.scaleLinear([0, d3.max(rows, (r) => r[m]) || 1], [H - 30, 10]).nice();
+    const svg = d3.select(box).insert('svg', ':first-child').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', `Daily ${m} by counsellor`);
+    const ga = svg.append('g').call(d3.axisLeft(y).ticks(5).tickFormat(m === 'talk_minutes' ? (v) => `${v}m` : d3.format('~s')));
+    tidy(ga);
+    let lw = 0; ga.selectAll('text').each(function () { lw = Math.max(lw, this.getComputedTextLength()); });
+    const left = Math.ceil(lw) + 20; ga.attr("transform", `translate(${left - 8},0)`);
+    svg.insert('g', ':first-child').selectAll('line').data(y.ticks(5)).join('line').attr('x1', left).attr('x2', W).attr('y1', y).attr('y2', y).attr('stroke', css('--grid'));
+    const x = d3.scaleBand(days, [left, W]).paddingInner(0.22).paddingOuter(0.08);
+    const xi = d3.scaleBand(REPS, [0, x.bandwidth()]).padding(0.1);
+    const gx = svg.append('g').attr('transform', `translate(0,${H - 24})`).call(d3.axisBottom(x).tickFormat((d) => d3.utcFormat('%a %-d')(parse(d))));
+    tidy(gx);
+    const every = Math.ceil(days.length * 50 / (W - left)); if (every > 1) gx.selectAll('.tick').filter((d, i) => i % every).remove();
+    const tip = tipFor(box), g = svg.append('g');
+    days.forEach((d) => {
+      const dr = REPS.map((rep) => rows.find((r) => r.date === d && r.counsellor === rep) || { counsellor: rep, [m]: 0 });
+      const col = g.append('g').attr('transform', `translate(${x(d)},0)`);
+      col.selectAll('rect.b').data(dr).join('rect').attr('class', 'b').attr('x', (r) => xi(r.counsellor)).attr('width', Math.max(1, xi.bandwidth()))
+        .attr('y', (r) => y(r[m])).attr('height', (r) => Math.max(0, y(0) - y(r[m]))).attr('rx', Math.min(4, xi.bandwidth() / 2)).attr('fill', (r) => c[r.counsellor]);
+      col.append('rect').attr('width', x.bandwidth()).attr('height', H - 24).attr('fill', 'transparent')
+        .on('pointermove', (ev) => { g.selectAll('rect.b').attr('opacity', 0.35); col.selectAll('rect.b').attr('opacity', 1); showTip(box, tip, ev, d3.utcFormat('%A %-d %b')(parse(d)), dr.map((r) => [c[r.counsellor], r.counsellor, metricFmt[m](r[m])])); })
+        .on('pointerleave', () => { tip.hidden = true; g.selectAll('rect.b').attr('opacity', 1); });
+    });
+  }
+
+  // Funnel
+  function drawFunnel() {
+    const box = document.getElementById('funnel'); box.replaceChildren();
+    const rs = DATA.funnel.filter((r) => r.counsellor === state.rep).sort((a, b) => a.step - b.step);
+    const top = rs[0].leads || 1;
+    const kept = rs.map((r, i) => (i ? (rs[i - 1].leads ? r.leads / rs[i - 1].leads : 0) : 1));
+    const worst = kept.indexOf(Math.min(...kept.slice(1)));
+    const color = COL()[state.rep];
+    rs.forEach((r, i) => {
+      const row = el('div', 'row'), tr = el('div', 'track'), f = el('div', 'fill'), v = el('span', 'val');
+      const w = r.leads / top * 78;
+      f.style.width = `${w}%`; f.style.background = i === worst ? css('--bad') : color;
+      v.style.left = `calc(${w}% + 8px)`; v.append(`${fInt(r.leads)} `);
+      if (i) { const e = el('em', i === worst ? 'bad' : null, `· ${fPct(kept[i])} kept`); v.append(e); }
+      tr.append(f, v); row.append(el('span', 'name', r.stage), tr); box.appendChild(row);
+    });
+  }
+
+  // Outcomes
+  function drawOutcomes() {
+    const box = document.getElementById('outcomes'); box.replaceChildren();
+    const rs = DATA.outcomes.filter((r) => r.counsellor === state.rep).sort((a, b) => b.calls - a.calls);
+    const total = d3.sum(rs, (r) => r.calls);
+    const W = Math.max(300, box.clientWidth), rowH = 30, H = rs.length * rowH + 4;
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Call outcomes');
+    const lab = svg.append('g').selectAll('text').data(rs).join('text').attr('y', (d, i) => i * rowH + rowH / 2 + 4).attr('fill', css('--muted')).style('font-size', '13px').text((d) => d.outcome);
+    let lw = 0; lab.each(function () { lw = Math.max(lw, this.getComputedTextLength()); });
+    const x0 = Math.ceil(lw) + 12, x = d3.scaleLinear([0, d3.max(rs, (r) => r.calls) || 1], [0, Math.max(40, W - x0 - 84)]);
+    const color = COL()[state.rep];
+    svg.append('g').selectAll('rect').data(rs).join('rect').attr('x', x0).attr('y', (d, i) => i * rowH + 7).attr('height', rowH - 14).attr('rx', 4)
+      .attr('width', (d) => Math.max(2, x(d.calls))).attr('fill', (d) => (d.outcome === 'Not logged' ? css('--mutedbar') : color));
+    svg.append('g').selectAll('text').data(rs).join('text').attr('x', (d) => x0 + Math.max(2, x(d.calls)) + 6).attr('y', (d, i) => i * rowH + rowH / 2 + 4)
+      .attr('fill', css('--fg')).style('font-size', '13px').style('font-variant-numeric', 'tabular-nums').text((d) => `${fInt(d.calls)} · ${fPct(d.calls / total)}`);
+  }
+
+  function seg(id, key, opts) {
+    const box = document.getElementById(id);
+    if (opts) opts.forEach((o) => { const b = el('button', null, o); b.type = 'button'; b.dataset.v = o; b.setAttribute('aria-pressed', String(o === state[key])); box.appendChild(b); });
+    box.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+      state[key] = b.dataset.v; box.querySelectorAll('button').forEach((o) => o.setAttribute('aria-pressed', String(o === b))); render();
+    }));
+  }
+  seg('metric-seg', 'metric');
+  seg('rep-seg', 'rep', ['Team', ...REPS]);
+
+  function render() { drawTable(); drawDaily(); drawFunnel(); drawOutcomes(); }
+  render();
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 120); });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+})();
+</script>
+</body>
+</html>
